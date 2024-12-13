@@ -75,5 +75,5 @@ def dataloader(
 
     print(f'Created {args_file_path}')
 
-    return images, i_train, i_test, K , near, far, poses, render_poses, hwf , bds
+    return images, i_train, i_test, H, W ,  K , near, far, poses
 

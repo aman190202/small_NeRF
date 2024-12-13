@@ -1,6 +1,6 @@
 import numpy as np
 from load_data import dataloader
-from helper import 
+from helper import get_rays_np
 #from processing import create_nerf
 
 expname = "fern",
@@ -16,8 +16,9 @@ use_batching = True # Use batching
 if __name__ == "__main__":
     
     # Retrieve data from the files
-    images, i_train, i_test, K , near, far, poses,  hwf = dataloader()
+    images, i_train, i_test, H, W ,  K , near, far, poses = dataloader()
     render_poses = np.array(poses[i_test])
+
     if use_batching:
         # For random ray batching
         print('get rays')
