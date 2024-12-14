@@ -4,6 +4,7 @@ from tqdm import tqdm
 import torch.nn as nn
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 
 
 @torch.no_grad()
@@ -115,24 +116,51 @@ def render_rays(nerf_model, ray_origins, ray_directions, hn=0, hf=0.5, nb_bins=1
     return c + 1 - weight_sum.unsqueeze(-1)
 
 
-def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=1, nb_epochs=int(1),
+def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=1, nb_epochs=1,
           nb_bins=192, H=400, W=400, testing_dataset=None):
+
+    writer = SummaryWriter(log_dir='./logs/nerf_training')
     training_loss = []
-    for _ in tqdm(range(nb_epochs)):
-        for batch in data_loader:
+
+    for epoch in tqdm(range(nb_epochs), desc="Epochs"):
+        epoch_loss = 0
+        num_batches = len(data_loader)  # Total number of batches per epoch
+        
+        for batch_idx, batch in enumerate(tqdm(data_loader, desc=f"Epoch {epoch + 1} Progress", leave=False)):
             ray_origins = batch[:, :3].to(device)
             ray_directions = batch[:, 3:6].to(device)
             ground_truth_px_values = batch[:, 6:].to(device)
-            
-            regenerated_px_values = render_rays(nerf_model, ray_origins, ray_directions, hn=hn, hf=hf, nb_bins=nb_bins) 
-            loss = ((ground_truth_px_values - regenerated_px_values) ** 2).sum()
 
+            # Forward pass
+            regenerated_px_values = render_rays(nerf_model, ray_origins, ray_directions, hn=hn, hf=hf, nb_bins=nb_bins)
+
+            # Compute loss
+            loss = ((ground_truth_px_values - regenerated_px_values) ** 2).mean()
+
+            # Backpropagation and optimization
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+
+            # Update loss and log it
+            epoch_loss += loss.item()
             training_loss.append(loss.item())
+            writer.add_scalar('Loss/train_batch', loss.item(), epoch * len(data_loader) + batch_idx)
+
+            # Display batch progress
+            print(f"Epoch [{epoch + 1}/{nb_epochs}], Batch [{batch_idx + 1}/{num_batches}], Loss: {loss.item():.4f}")
+
+        # Step scheduler
         scheduler.step()
 
-        for img_index in range(200):
-            test(nerf_model,hn, hf, testing_dataset, img_index=img_index, nb_bins=nb_bins, H=H, W=W,device = device)
+        # Log average epoch loss
+        avg_epoch_loss = epoch_loss / num_batches
+        writer.add_scalar('Loss/train_epoch', avg_epoch_loss, epoch)
+
+        # Log test images
+        for img_index in range(2):
+            rendered_img = test(nerf_model, hn, hf, testing_dataset, img_index=img_index, nb_bins=nb_bins, H=H, W=W, device=device)
+            writer.add_image(f'Test_Image_{img_index}', rendered_img.transpose(2, 0, 1), epoch)
+
+    writer.close()
     return training_loss
