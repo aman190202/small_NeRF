@@ -34,44 +34,74 @@ def positional_encoding(inputs, num_freqs=10):
     out_dim = d + 2 * d * num_freqs  # Original + 2 * num_freqs * input_dimensionality
     return torch.cat(encoded, dim=-1), out_dim
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
 class NeRF(nn.Module):
-    def __init__(self, D=8, W=256, input_ch=3, input_ch_views=3, output_ch=4, skips=[4], use_viewdirs=False):
-        """ 
+    def __init__(self, pos=3, hidden_dim=256, depth=8, skips=[4]):
+        """
+        NeRF Model with dynamic skip connections and without using shortcuts.
+
+        Args:
+            pos (int): Input dimensions (e.g., 3 for x, y, z coordinates).
+            hidden_dim (int): Number of hidden units in each layer.
+            depth (int): Number of layers in the network.
+            skips (list): Layers where skip connections are added.
         """
         super(NeRF, self).__init__()
-        self.D = D
-        self.W = W
-        self.input_ch = input_ch
-        self.input_ch_views = input_ch_views
+        self.depth = depth
+        self.hidden_dim = hidden_dim
         self.skips = skips
-        self.use_viewdirs = use_viewdirs
-        
-        self.pts_linears = nn.ModuleList(
-            [nn.Linear(input_ch, W)] + [nn.Linear(W, W) if i not in self.skips else nn.Linear(W + input_ch, W) for i in range(D-1)])
-        
-        ### Implementation according to the official code release (https://github.com/bmild/nerf/blob/master/run_nerf_helpers.py#L104-L105)
-        self.views_linears = nn.ModuleList([nn.Linear(input_ch_views + W, W//2)])
-        
-        if use_viewdirs:
-            self.feature_linear = nn.Linear(W, W)
-            self.alpha_linear = nn.Linear(W, 1)
-            self.rgb_linear = nn.Linear(W//2, 3)
-        else:
-            self.output_linear = nn.Linear(W, output_ch)
+
+        # Define the input layer
+        self.input_layer = nn.Linear(pos, hidden_dim)
+
+        # Define the intermediate layers
+        self.intermediate_layers = nn.ModuleList()
+        for i in range(1, depth):
+            if i in skips:
+                self.intermediate_layers.append(nn.Linear(hidden_dim + pos, hidden_dim))
+            else:
+                self.intermediate_layers.append(nn.Linear(hidden_dim, hidden_dim))
+
+        # Define the output layers for RGB and Alpha
+        self.output_rgb = nn.Linear(hidden_dim, 3)  # RGB color output
+        self.output_alpha = nn.Linear(hidden_dim, 1)  # Alpha (density) output
 
     def forward(self, x):
-        input_pts, input_views = torch.split(x, [self.input_ch, self.input_ch_views], dim=-1)
-        h = input_pts
-        for i, l in enumerate(self.pts_linears):
-            h = self.pts_linears[i](h)
+        """
+        Forward pass for NeRF.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape [batch_size, pos].
+
+        Returns:
+            torch.Tensor: Output tensor of shape [batch_size, 4] (RGB + Alpha).
+        """
+        # Store the original input for skip connections
+        input_pos = x
+
+        # Pass input through the input layer
+        h = self.input_layer(input_pos)
+        h = F.relu(h)
+
+        # Pass through intermediate layers with skip connections
+        for i, layer in enumerate(self.intermediate_layers):
+            if i + 1 in self.skips:  # Check if the current layer is a skip connection
+                h = torch.cat([input_pos, h], dim=-1)  # Concatenate the input with current hidden state
+            h = layer(h)
             h = F.relu(h)
-            if i in self.skips:
-                h = torch.cat([input_pts, h], -1)
 
-            outputs = self.output_linear(h)
+        # Compute RGB output
+        rgb = self.output_rgb(h)
 
-        return outputs    
+        # Compute Alpha output
+        alpha = self.output_alpha(h)
 
+        # Combine RGB and Alpha into a single output tensor
+        output = torch.cat([rgb, alpha], dim=-1)
+        return output
 
 
 
@@ -114,7 +144,7 @@ def create_nerf(basedir,expname):
     
 # beginning
 # render_kwargs_train, render_kwargs_test, start, grad_vars, optimizer = create_nerf(args)
-
-x = torch.Tensor([1,2,3])
-y = positional_encoding(x,10)
-print(y.shape)
+# if __name__=='__main__':
+#     x = torch.Tensor([1,2,3])
+#     y = positional_encoding(x,10)
+#     print(x.shape, y.shape)

@@ -1,51 +1,51 @@
 import numpy as np
 from load_data import dataloader
 from helper import get_rays_np
+import torch
+from model import NerfModel, train
+from torch.utils.data import DataLoader
 #from processing import create_nerf
 
 expname = "fern",
 datadir = "./data/nerf_llff_data/fern",
 basedir = "./logs",
-factor = 2, # Downsample the image by a factor of what
+factor = 4, # Downsample the image by a factor of what
 spherify = True, # The spherify_poses function modifies a set of camera poses to fit a spherical trajectory around the scene, ensuring the camera’s path lies on a sphere. 
 llffhold = 8, # every 8th image to be stored for test
 render_test = "True",  # Render the test set instead of a given path
 N_rand = 32*32*4 # Batch size
 use_batching = True # Use batching
+device = 'cpu'
 
 if __name__ == "__main__":
-    
-    # Retrieve data from the files
+
+    # get data
+    # convert data into nerf form
+
     images, i_train, i_test, H, W ,  K , near, far, poses = dataloader()
     render_poses = np.array(poses[i_test])
+        
+    # Separate poses for training and testing
+    train_poses = poses[i_train, :3, :4]  # Only training poses
+    test_poses = poses[i_test, :3, :4]    # Only testing poses
 
-    if use_batching:
-        # For random ray batching
-        print('get rays')
-        rays = np.stack([get_rays_np(H, W, K, p) for p in poses[:,:3,:4]], 0) # [N, ro+rd, H, W, 3]
-        print('done, concats')
-        rays_rgb = np.concatenate([rays, images[:,None]], 1) # [N, ro+rd+rgb, H, W, 3]
-        rays_rgb = np.transpose(rays_rgb, [0,2,3,1,4]) # [N, H, W, ro+rd+rgb, 3]
-        rays_rgb = np.stack([rays_rgb[i] for i in i_train], 0) # train images only
-        rays_rgb = np.reshape(rays_rgb, [-1,3,3]) # [(N-1)*H*W, ro+rd+rgb, 3]
-        rays_rgb = rays_rgb.astype(np.float32)
-        print('shuffle rays')
-        np.random.shuffle(rays_rgb)
+    # Generate rays for training
+    rays_train = np.stack([get_rays_np(H, W, K, p) for p in train_poses], axis=0).reshape(-1,6)
+    images_train = images[i_train].reshape(-1, 3)  # Flatten training images
+    training_dataset = torch.cat((torch.tensor(rays_train), torch.tensor(images_train)), dim=-1)  
 
-        print('done')
-        i_batch = 0
+    # Generate rays for testing
+    rays_test = np.stack([get_rays_np(H, W, K, p) for p in test_poses], axis=0).reshape(-1,6)  
+    images_test = images[i_test].reshape(-1, 3)  # Flatten testing images
+    testing_dataset = torch.cat((torch.tensor(rays_test), torch.tensor(images_test)), dim=-1) 
+
+    model = NerfModel(hidden_dim=256).to(device)
+    model_optimizer = torch.optim.Adam(model.parameters(), lr=5e-4)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(model_optimizer, milestones=[2, 4, 8], gamma=0.5)
+    data_loader = DataLoader(training_dataset, batch_size=1024, shuffle=True)
+
+    train(model, model_optimizer, scheduler, data_loader, nb_epochs=16, device=device, hn=near, hf=far, nb_bins=192, H=H,W=W, testing_dataset = testing_dataset)
 
 
-  
-    # # setting up the model, optimizer, and rendering configurations
-    # render_kwargs_train, reder_kwargs_test, start, grad_vars, optimizer = create_nerf(basedir)
-    
-    # global_step = start
-
-    # bds_dict = {
-    #     'near' : near,
-    #     'far' : far,
-    # }
-    # render_kwargs_train.update(bds_dict)
-    # render_kwargs_test.update(bds_dict)
+        
 

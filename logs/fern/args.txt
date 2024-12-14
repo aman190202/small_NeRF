@@ -1,7 +1,7 @@
 expname = fern
 datadir = ./data/nerf_llff_data/fern
 basedir = ./logs
-factor = 2
+factor = 16
 spherify = True
 llffhold = 8
 render_test = True
