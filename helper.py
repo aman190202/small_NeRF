@@ -9,7 +9,7 @@ def get_rays_np(H, W, K, c2w):
     d = np.sum(dirs[..., np.newaxis, :] * c2w[:3,:3], -1)  # dot product, equals to: [c2w.dot(dir) for dir in dirs]
     rays_d = torch.from_numpy(d.copy())
     # Translate camera frame's origin to the world frame. It is the origin of all rays.
-    o = torch.from_numpy(np.broadcast_to(c2w[:3,-1], np.shape(rays_d)))
+    o = np.broadcast_to(c2w[:3,-1], np.shape(rays_d))
     rays_o = torch.from_numpy(o.copy())
     return torch.cat((rays_o, rays_d),dim = -1)
 

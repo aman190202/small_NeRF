@@ -117,7 +117,7 @@ def render_rays(nerf_model, ray_origins, ray_directions, hn=0, hf=0.5, nb_bins=1
 
 
 def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=1, nb_epochs=1,
-          nb_bins=192, H=400, W=400, testing_dataset=None):
+          nb_bins=192, H=400, W=400, testing_dataset=None, test_len = None):
 
     writer = SummaryWriter(log_dir='./logs/nerf_training')
     training_loss = []
@@ -157,8 +157,9 @@ def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=
         avg_epoch_loss = epoch_loss / num_batches
         writer.add_scalar('Loss/train_epoch', avg_epoch_loss, epoch)
 
+        
         # Log test images
-        for img_index in range(2):
+        for img_index in range(test_len):
             rendered_img = test(nerf_model, hn, hf, testing_dataset, img_index=img_index, nb_bins=nb_bins, H=H, W=W, device=device)
             writer.add_image(f'Test_Image_{img_index}', rendered_img.transpose(2, 0, 1), epoch)
 
