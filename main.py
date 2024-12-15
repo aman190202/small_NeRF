@@ -17,7 +17,7 @@ llffhold = 8, # every 8th image to be stored for test
 render_test = "True",  # Render the test set instead of a given path
 N_rand = 32 * 32 * 4 * 2 # Batch size
 use_batching = True # Use batching
-device = 'cuda'
+device = 'cpu'
 
 if __name__ == "__main__":
 
@@ -48,7 +48,8 @@ if __name__ == "__main__":
     scheduler = torch.optim.lr_scheduler.MultiStepLR(model_optimizer, milestones=[2, 4, 8], gamma=0.5)
     data_loader = DataLoader(training_dataset, batch_size=N_rand, shuffle=True)
 
-    loss = train(model, model_optimizer, scheduler, data_loader, nb_epochs=1, device=device, hn=near, hf=far, nb_bins=10, H=H,W=W, testing_dataset = testing_dataset)
+
+    loss = train(model, model_optimizer, scheduler, data_loader, nb_epochs=16, device=device, hn=near, hf=far, nb_bins=10, H=H,W=W, testing_dataset = testing_dataset, test_len=len(i_test))
 
     # Save the model weights
     current_datetime = time.strftime("%Y%m%d-%H%M%S")
