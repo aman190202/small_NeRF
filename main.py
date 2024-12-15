@@ -4,6 +4,8 @@ from helper import get_rays_np
 import torch
 from model import NerfModel, train
 from torch.utils.data import DataLoader
+import time
+from visualize import visualize_nerf_output
 #from processing import create_nerf
 
 expname = "fern",
@@ -46,8 +48,15 @@ if __name__ == "__main__":
     scheduler = torch.optim.lr_scheduler.MultiStepLR(model_optimizer, milestones=[2, 4, 8], gamma=0.5)
     data_loader = DataLoader(training_dataset, batch_size=N_rand, shuffle=True)
 
-    train(model, model_optimizer, scheduler, data_loader, nb_epochs=1, device=device, hn=near, hf=far, nb_bins=10, H=H,W=W, testing_dataset = testing_dataset)
+    loss = train(model, model_optimizer, scheduler, data_loader, nb_epochs=1, device=device, hn=near, hf=far, nb_bins=10, H=H,W=W, testing_dataset = testing_dataset)
 
+    # Save the model weights
+    current_datetime = time.strftime("%Y%m%d-%H%M%S")
+    torch.save(model.state_dict(), f'out/nerf_model_weights_{current_datetime}.pth')
+
+    # Visualize NeRF from model rather than retraining
+    for img_index in range(2):
+        visualize_nerf_output(model, near, far, testing_dataset, img_index=img_index, nb_bins=192, H=H, W=W, device=device)
 
         
 
