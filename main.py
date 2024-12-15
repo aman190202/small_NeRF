@@ -49,7 +49,7 @@ if __name__ == "__main__":
     data_loader = DataLoader(training_dataset, batch_size=N_rand, shuffle=True)
 
 
-    loss = train(model, model_optimizer, scheduler, data_loader, nb_epochs=10, device=device, hn=near, hf=far, nb_bins=10, H=H,W=W, testing_dataset = testing_dataset, test_len=len(i_test))
+    loss = train(model, model_optimizer, scheduler, data_loader, nb_epochs=120, device=device, hn=near, hf=far, nb_bins=10, H=H,W=W, testing_dataset = testing_dataset, test_len=len(i_test))
 
     # Save the model weights
     current_datetime = time.strftime("%Y%m%d-%H%M%S")
