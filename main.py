@@ -57,6 +57,3 @@ if __name__ == "__main__":
     # Visualize NeRF from model rather than retraining
     for img_index in range(2):
         visualize_nerf_output(model, near, far, testing_dataset, img_index=img_index, nb_bins=192, H=H, W=W, device=device)
-
-        
-
