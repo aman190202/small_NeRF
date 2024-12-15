@@ -4,6 +4,7 @@ from tqdm import tqdm
 import torch.nn as nn
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
+import time
 from torch.utils.tensorboard import SummaryWriter
 
 
@@ -126,7 +127,7 @@ def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=
         epoch_loss = 0
         num_batches = len(data_loader)  # Total number of batches per epoch
         
-        for batch_idx, batch in enumerate(tqdm(data_loader, desc=f"Epoch {epoch + 1} Progress", leave=False)):
+        for batch_idx, batch in enumerate(data_loader):
             ray_origins = batch[:, :3].to(device)
             ray_directions = batch[:, 3:6].to(device)
             ground_truth_px_values = batch[:, 6:].to(device)
@@ -148,7 +149,8 @@ def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=
             writer.add_scalar('Loss/train_batch', loss.item(), epoch * len(data_loader) + batch_idx)
 
             # Display batch progress
-            print(f"Epoch [{epoch + 1}/{nb_epochs}], Batch [{batch_idx + 1}/{num_batches}], Loss: {loss.item():.4f}")
+            if(batch_idx%100 == 0):
+                print(f"Epoch [{epoch + 1}/{nb_epochs}], Batch [{batch_idx + 1}/{num_batches}], Loss: {loss.item():.4f}")
 
         # Step scheduler
         scheduler.step()
@@ -156,12 +158,13 @@ def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=
         # Log average epoch loss
         avg_epoch_loss = epoch_loss / num_batches
         writer.add_scalar('Loss/train_epoch', avg_epoch_loss, epoch)
-
+        current_datetime = time.strftime("%Y%m%d-%H%M%S")
+        torch.save(nerf_model.state_dict(), f'out/nerf_model_weights_{current_datetime}_{epoch}.pth')
         
         # Log test images
         for img_index in range(test_len):
             rendered_img = test(nerf_model, hn, hf, testing_dataset, img_index=img_index, nb_bins=nb_bins, H=H, W=W, device=device)
-            writer.add_image(f'Test_Image_{img_index}', rendered_img.transpose(2, 0, 1), epoch)
+            writer.add_image(f'Test_Image_{img_index}_{epoch}', rendered_img.transpose(2, 0, 1), epoch)
 
     writer.close()
     return training_loss

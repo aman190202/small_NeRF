@@ -17,7 +17,7 @@ llffhold = 8, # every 8th image to be stored for test
 render_test = "True",  # Render the test set instead of a given path
 N_rand = 32 * 32 * 4 * 2 # Batch size
 use_batching = True # Use batching
-device = 'cpu'
+device = 'cuda'
 
 if __name__ == "__main__":
 
@@ -49,12 +49,12 @@ if __name__ == "__main__":
     data_loader = DataLoader(training_dataset, batch_size=N_rand, shuffle=True)
 
 
-    loss = train(model, model_optimizer, scheduler, data_loader, nb_epochs=16, device=device, hn=near, hf=far, nb_bins=10, H=H,W=W, testing_dataset = testing_dataset, test_len=len(i_test))
+    loss = train(model, model_optimizer, scheduler, data_loader, nb_epochs=16, device=device, hn=near, hf=far, nb_bins=30, H=H,W=W, testing_dataset = testing_dataset, test_len=len(i_test))
 
     # Save the model weights
     current_datetime = time.strftime("%Y%m%d-%H%M%S")
-    torch.save(model.state_dict(), f'out/nerf_model_weights_{current_datetime}.pth')
+    torch.save(model.state_dict(), f'out/nerf_model_weights_{current_datetime}_{expname}.pth')
 
     # Visualize NeRF from model rather than retraining
-    for img_index in range(2):
-        visualize_nerf_output(model, near, far, testing_dataset, img_index=img_index, nb_bins=192, H=H, W=W, device=device)
+    # for img_index in range(2):
+    #     visualize_nerf_output(model, near, far, testing_dataset, img_index=img_index, nb_bins=192, H=H, W=W, device=device)
