@@ -66,7 +66,7 @@ def _load_data(basedir, factor=None, width=None, height=None, load_imgs=True):
     bds = poses_arr[:, -2:].transpose([1,0])
     
     img0 = [os.path.join(basedir, 'images', f) for f in sorted(os.listdir(os.path.join(basedir, 'images'))) \
-            if f.endswith('JPG') or f.endswith('jpg') or f.endswith('png')][0]
+            if f.endswith('JPG') or f.endswith('jpg') or f.endswith('jpeg')][0]
     sh = imageio.imread(img0).shape
     
     sfx = ''

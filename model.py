@@ -6,10 +6,11 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 import time
 from torch.utils.tensorboard import SummaryWriter
+import imageio
 
 
 @torch.no_grad()
-def test(model,hn, hf, dataset, chunk_size=10, img_index=0, nb_bins=192, H=400, W=400, device = 'cpu'):
+def test(model,hn, hf, dataset, chunk_size=10, img_index=0, nb_bins=192, H=400, W=400, device = 'cpu', epoch = 0):
     """
     Args:
         hn: near plane distance
@@ -36,10 +37,8 @@ def test(model,hn, hf, dataset, chunk_size=10, img_index=0, nb_bins=192, H=400, 
         data.append(regenerated_px_values)
     img = torch.cat(data).data.cpu().numpy().reshape(H, W, 3)
 
-    plt.figure()
-    plt.imshow(img)
-    plt.savefig(f'novel_views/img_{img_index}.png', bbox_inches='tight')
-    plt.close()
+    imageio.imwrite(f'cit/img_{img_index}_{epoch}.png', (img * 255).astype(np.uint8))
+
 
 
 class NerfModel(nn.Module):
@@ -148,7 +147,7 @@ def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=
             training_loss.append(loss.item())
             writer.add_scalar('Loss/train_batch', loss.item(), epoch * len(data_loader) + batch_idx)
 
-            # Display batch progress
+            # # Display batch progress
             if(batch_idx%100 == 0):
                 print(f"Epoch [{epoch + 1}/{nb_epochs}], Batch [{batch_idx + 1}/{num_batches}], Loss: {loss.item():.4f}")
 
@@ -163,8 +162,8 @@ def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=
         
         # Log test images
         for img_index in range(test_len):
-            rendered_img = test(nerf_model, hn, hf, testing_dataset, img_index=img_index, nb_bins=nb_bins, H=H, W=W, device=device)
-            writer.add_image(f'Test_Image_{img_index}_{epoch}', rendered_img.transpose(2, 0, 1), epoch)
+            rendered_img = test(nerf_model, hn, hf, testing_dataset, img_index=img_index, nb_bins=nb_bins, H=H, W=W, device=device, epoch = epoch)
+           #writer.add_image(f'out/Test_Image_{img_index}_{epoch}', rendered_img.transpose(2, 0, 1), epoch)
 
     writer.close()
     return training_loss

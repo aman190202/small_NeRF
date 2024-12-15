@@ -1,3 +1,9 @@
 __pycache__
 data/
 .DS_Store
+out/
+fern/
+datadir/
+fern_4/
+logs/
+.vscode/

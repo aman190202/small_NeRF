@@ -1,13 +1,13 @@
-from load_llff import load_llff_data
+from load_llff import load_llff_data, spherify_poses
 import numpy as np
 import os 
 
 
 def dataloader(
-        expname = "fern",
-        datadir = "./data/nerf_llff_data/fern",
+        expname = "cit",
+        datadir = "datadir",
         basedir = "./logs",
-        factor = 16, # Downsample the image by a factor of what
+        factor = 4, # Downsample the image by a factor of what
         spherify = True, # The spherify_poses function modifies a set of camera poses to fit a spherical trajectory around the scene, ensuring the camera’s path lies on a sphere. 
         llffhold = 8, # every 8th image to be stored for test
         render_test = "True",  # Render the test set instead of a given path
@@ -43,6 +43,7 @@ def dataloader(
     H, W, focal = hwf
     H, W = int(H), int(W)
     hwf = [H, W, focal]
+
 
 
     K = np.array([

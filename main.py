@@ -9,13 +9,13 @@ from visualize import visualize_nerf_output
 #from processing import create_nerf
 
 expname = "fern",
-datadir = "./data/nerf_llff_data/fern",
+datadir = "data",
 basedir = "./logs",
-factor = 8, # Downsample the image by a factor of what
+factor = 2, # Downsample the image by a factor of what
 spherify = True, # The spherify_poses function modifies a set of camera poses to fit a spherical trajectory around the scene, ensuring the camera’s path lies on a sphere. 
-llffhold = 8, # every 8th image to be stored for test
+llffhold = 5, # every 8th image to be stored for test
 render_test = "True",  # Render the test set instead of a given path
-N_rand = 32 * 32 * 4 * 2 # Batch size
+N_rand = 32 * 32 * 4  # Batch size
 use_batching = True # Use batching
 device = 'cuda'
 
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     data_loader = DataLoader(training_dataset, batch_size=N_rand, shuffle=True)
 
 
-    loss = train(model, model_optimizer, scheduler, data_loader, nb_epochs=16, device=device, hn=near, hf=far, nb_bins=30, H=H,W=W, testing_dataset = testing_dataset, test_len=len(i_test))
+    loss = train(model, model_optimizer, scheduler, data_loader, nb_epochs=10, device=device, hn=near, hf=far, nb_bins=10, H=H,W=W, testing_dataset = testing_dataset, test_len=len(i_test))
 
     # Save the model weights
     current_datetime = time.strftime("%Y%m%d-%H%M%S")
