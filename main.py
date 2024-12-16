@@ -24,7 +24,7 @@ if __name__ == "__main__":
     # get data
     # convert data into nerf form
 
-    images, i_train, i_test, H, W ,  K , near, far, poses = dataloader()
+    images, i_train, i_test, H, W ,  K , near, far, poses = dataloader(expname, datadir,basedir,factor,spherify)
     render_poses = np.array(poses[i_test])
         
     # Separate poses for training and testing

@@ -1,4 +1,6 @@
-# NeRF PyTorch Breakdown
+# A small NeRF implementaion
+
+<img src="/Users/aman/Developer/nerf/img_0_21.png"></img>
 
 ```
 conda env create -f environment.yml
@@ -10,5 +12,6 @@ or
 pip install torch numpy tqdm matplotlib tensorboard imageio
 ```
 
-1. Begins at run_nerf.py train() function
-2. load_data.py has dataloader that fills in values
+You can change the paramteres in the main file to run NeRF on your own scenes. We avoid using heirarichal sampling because there wasn't a very significant growth in the PSNR scores with the heirarical sampling, as can be seen in the results section of the original paper.
+
+To create your own dataset, follow the link <a href="https://github.com/fyusion/llff">here</a>
