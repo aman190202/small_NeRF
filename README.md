@@ -1,6 +1,6 @@
 # A small NeRF implementaion
 
-<img src="/Users/aman/Developer/nerf/img_0_21.png"></img>
+<img src="img_0_21.png"></img>
 
 ```
 conda env create -f environment.yml
